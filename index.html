@@ -1890,7 +1890,7 @@ function csRenderRanking() {
       personMap[rd.name] = { pjs: [], apply: 0, jisshi: 0, seiyaku: 0 };
     }
     var jRate = csParsePercent(m['実施率']);
-    var sRate = csParsePercent(m['成約率']);
+    var sRate = jisshi > 0 ? (seiyaku / jisshi) * 100 : null;
     personMap[rd.name].pjs.push({ pj: rd.pj, apply: apply, jisshi: jisshi, seiyaku: seiyaku, jRate: jRate, sRate: sRate });
     personMap[rd.name].apply += apply;
     personMap[rd.name].jisshi += jisshi;
