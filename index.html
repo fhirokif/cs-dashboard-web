@@ -884,6 +884,7 @@
             <div class="cs-section">
               <div class="cs-section-header">個人ランキング</div>
               <div class="month-tabs" style="padding:16px 20px 0;" id="csRankingTabs"></div>
+              <div class="month-tabs" style="padding:4px 20px 0;" id="csRankSortTabs"></div>
               <div class="ranking-section">
                 <div id="csRankingLoading" class="cs-loading" style="padding:30px;"><div class="spinner"></div><div>ランキングデータを読み込み中...</div></div>
                 <div id="csRankingContent" style="display:none;">
@@ -1842,8 +1843,25 @@ function csRenderRankingTabs() {
       + 'onclick="csSwitchRankMonth(\'' + CS_MONTHS[mi] + '\',this)">' + CS_MONTHS[mi] + '</div>';
   }
   document.getElementById('csRankingTabs').innerHTML = html;
+  csRenderSortTabs();
   document.getElementById('csRankingLoading').style.display = 'none';
   document.getElementById('csRankingContent').style.display = 'block';
+}
+
+function csRenderSortTabs() {
+  var sortOptions = [
+    { key: 'apply', label: '申込数' }, { key: 'jisshi', label: '実施数' },
+    { key: '実施率', label: '実施率' }, { key: 'seiyaku', label: '成約数' }, { key: '成約率', label: '成約率' }
+  ];
+  var html = '';
+  for (var i = 0; i < sortOptions.length; i++) {
+    var s = sortOptions[i];
+    var isActive = s.key === csCurrentRankSort.key;
+    var arrow = isActive ? (csCurrentRankSort.desc ? ' ↓' : ' ↑') : '';
+    html += '<div class="month-tab' + (isActive ? ' active' : '') + '" '
+      + 'onclick="csSortRanking(\'' + s.key + '\')">' + s.label + arrow + '</div>';
+  }
+  document.getElementById('csRankSortTabs').innerHTML = html;
 }
 
 function csSwitchRankMonth(month, el) {
@@ -1955,6 +1973,7 @@ function csRenderRanking() {
 function csSortRanking(key) {
   if (csCurrentRankSort.key === key) { csCurrentRankSort.desc = !csCurrentRankSort.desc; }
   else { csCurrentRankSort.key = key; csCurrentRankSort.desc = true; }
+  csRenderSortTabs();
   csRenderRanking();
 }
 
