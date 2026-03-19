@@ -717,6 +717,21 @@
   .rank-medal-wrap.silver { background: rgba(192,192,192,0.15); }
   .rank-medal-wrap.bronze { background: rgba(205,127,50,0.12); }
 
+  /* Ranking expand/collapse */
+  .rank-row { cursor: pointer; transition: background 0.15s; }
+  .rank-row:hover { background: #f0f4ff !important; }
+  .rank-row.expanded { border-left: 3px solid #2a5cd6 !important; background: #f8faff !important; }
+  .rank-detail-row { background: transparent !important; border-left: none !important; }
+  .rank-detail-row:hover { background: transparent !important; border-left-color: transparent !important; }
+  .rank-detail-row > td { padding: 0 !important; border-bottom: none !important; }
+  .rank-detail { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .rank-detail.open { max-height: 500px; }
+  .rank-detail-inner { padding: 8px 16px 12px 48px; }
+  .rank-detail-table { width: 100%; font-size: 0.85em; border-collapse: collapse; background: #f4f6fb; border-radius: 6px; }
+  .rank-detail-table td { padding: 4px 10px; color: #4a6080; border-bottom: 1px solid #e8ecf2; }
+  .rank-detail-table td:first-child { font-weight: 600; color: #1a3060; text-align: left; }
+  .pj-count-badge { display: inline-block; background: #e0e7ff; color: #2a5cd6; border-radius: 4px; padding: 1px 6px; font-size: 0.8em; font-weight: 600; }
+
   /* CS Loading */
   .cs-loading {
     display: flex;
@@ -1844,14 +1859,32 @@ function csRenderRanking() {
     document.getElementById('csRankingContent').innerHTML = '<div style="padding:20px;color:#94a3b8;">データがありません</div>';
     return;
   }
-  var rows = [];
+  // 1. 名前でグループ化
+  var personMap = {};
   for (var i = 0; i < csRankingData.length; i++) {
     var rd = csRankingData[i];
     var m = rd.monthly[csCurrentRankMonth] || {};
-    var apply = csParseNum(m['申込数']); var jisshi = csParseNum(m['実施数']); var seiyaku = csParseNum(m['成約数']);
-    var jRate = csParsePercent(m['実施率']); var sRate = csParsePercent(m['成約率']);
+    var apply = csParseNum(m['申込数']);
+    var jisshi = csParseNum(m['実施数']);
+    var seiyaku = csParseNum(m['成約数']);
     if (apply === 0 && jisshi === 0 && seiyaku === 0) continue;
-    rows.push({ name: rd.name, pj: rd.pj, apply: apply, jisshi: jisshi, seiyaku: seiyaku, jRate: jRate, sRate: sRate });
+    if (!personMap[rd.name]) {
+      personMap[rd.name] = { pjs: [], apply: 0, jisshi: 0, seiyaku: 0 };
+    }
+    var jRate = csParsePercent(m['実施率']);
+    var sRate = csParsePercent(m['成約率']);
+    personMap[rd.name].pjs.push({ pj: rd.pj, apply: apply, jisshi: jisshi, seiyaku: seiyaku, jRate: jRate, sRate: sRate });
+    personMap[rd.name].apply += apply;
+    personMap[rd.name].jisshi += jisshi;
+    personMap[rd.name].seiyaku += seiyaku;
+  }
+  // 2. 合計の率を再計算
+  var rows = [];
+  for (var name in personMap) {
+    var p = personMap[name];
+    var jRate = p.apply > 0 ? (p.jisshi / p.apply) * 100 : null;
+    var sRate = p.apply > 0 ? (p.seiyaku / p.apply) * 100 : null;
+    rows.push({ name: name, pjs: p.pjs, apply: p.apply, jisshi: p.jisshi, seiyaku: p.seiyaku, jRate: jRate, sRate: sRate });
   }
   var key = csCurrentRankSort.key; var desc = csCurrentRankSort.desc;
   rows.sort(function(a, b) {
@@ -1860,13 +1893,13 @@ function csRenderRanking() {
     return desc ? vb - va : va - vb;
   });
   var cols = [
-    { key: 'rank', label: '#' }, { key: 'name', label: '担当者' }, { key: 'pj', label: 'PJ' },
+    { key: 'rank', label: '#' }, { key: 'name', label: '担当者' }, { key: 'pjCount', label: 'PJ数' },
     { key: 'apply', label: '申込数' }, { key: 'jisshi', label: '実施数' }, { key: '実施率', label: '実施率' },
     { key: 'seiyaku', label: '成約数' }, { key: '成約率', label: '成約率' }
   ];
   var headHtml = '<tr>';
   for (var c = 0; c < cols.length; c++) {
-    var sortable = cols[c].key !== 'rank' && cols[c].key !== 'name' && cols[c].key !== 'pj';
+    var sortable = cols[c].key !== 'rank' && cols[c].key !== 'name' && cols[c].key !== 'pjCount';
     var isActive = cols[c].key === csCurrentRankSort.key;
     var arrow = isActive ? (desc ? ' &#9660;' : ' &#9650;') : '';
     headHtml += '<th' + (isActive ? ' class="sort-active"' : '') + (sortable ? ' onclick="csSortRanking(\'' + cols[c].key + '\')"' : '') + '>'
@@ -1883,18 +1916,38 @@ function csRenderRanking() {
     else if (i === 1) medal = '<span class="rank-medal-wrap silver"><span class="rank-medal">&#129352;</span></span>';
     else if (i === 2) medal = '<span class="rank-medal-wrap bronze"><span class="rank-medal">&#129353;</span></span>';
     else medal = (i + 1);
-    var jClass = r.jRate !== null ? csRateClass(r.jRate / 100, 'jisshi') : '';
-    var sClass = r.sRate !== null ? csRateClass(r.sRate / 100, 'seiyaku') : '';
-    bodyHtml += '<tr>';
+    var pjCell;
+    if (r.pjs.length === 1) {
+      pjCell = escapeHtml(r.pjs[0].pj);
+    } else {
+      pjCell = '<span class="pj-count-badge">' + r.pjs.length + 'PJ</span>';
+    }
+    var clickAttr = r.pjs.length > 1 ? ' onclick="csToggleRankDetail(' + i + ')"' : '';
+    var rowClass = r.pjs.length > 1 ? ' class="rank-row"' : '';
+    bodyHtml += '<tr id="rankRow-' + i + '"' + rowClass + clickAttr + '>';
     bodyHtml += '<td>' + medal + '</td>';
     bodyHtml += '<td>' + escapeHtml(r.name) + '</td>';
-    bodyHtml += '<td>' + escapeHtml(r.pj) + '</td>';
+    bodyHtml += '<td>' + pjCell + '</td>';
     bodyHtml += '<td>' + r.apply + '</td>';
     bodyHtml += '<td>' + r.jisshi + '</td>';
     bodyHtml += '<td>' + (r.jRate !== null ? csRateBadge(r.jRate / 100, 'jisshi') : '-') + '</td>';
     bodyHtml += '<td>' + r.seiyaku + '</td>';
     bodyHtml += '<td>' + (r.sRate !== null ? csRateBadge(r.sRate / 100, 'seiyaku') : '-') + '</td>';
     bodyHtml += '</tr>';
+    if (r.pjs.length > 1) {
+      bodyHtml += '<tr class="rank-detail-row"><td colspan="8"><div id="rankDetail-' + i + '" class="rank-detail"><div class="rank-detail-inner">';
+      bodyHtml += '<table class="rank-detail-table">';
+      for (var j = 0; j < r.pjs.length; j++) {
+        var pj = r.pjs[j];
+        bodyHtml += '<tr><td>' + escapeHtml(pj.pj) + '</td>';
+        bodyHtml += '<td>' + pj.apply + '</td>';
+        bodyHtml += '<td>' + pj.jisshi + '</td>';
+        bodyHtml += '<td>' + (pj.jRate !== null ? pj.jRate.toFixed(1) + '%' : '-') + '</td>';
+        bodyHtml += '<td>' + pj.seiyaku + '</td>';
+        bodyHtml += '<td>' + (pj.sRate !== null ? pj.sRate.toFixed(1) + '%' : '-') + '</td></tr>';
+      }
+      bodyHtml += '</table></div></div></td></tr>';
+    }
   }
   document.getElementById('csRankingBody').innerHTML = bodyHtml;
 }
@@ -1903,6 +1956,20 @@ function csSortRanking(key) {
   if (csCurrentRankSort.key === key) { csCurrentRankSort.desc = !csCurrentRankSort.desc; }
   else { csCurrentRankSort.key = key; csCurrentRankSort.desc = true; }
   csRenderRanking();
+}
+
+function csToggleRankDetail(idx) {
+  var panel = document.getElementById('rankDetail-' + idx);
+  var row = document.getElementById('rankRow-' + idx);
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    row.classList.remove('expanded');
+  } else {
+    document.querySelectorAll('.rank-detail.open').forEach(function(el) { el.classList.remove('open'); });
+    document.querySelectorAll('.rank-row.expanded').forEach(function(el) { el.classList.remove('expanded'); });
+    panel.classList.add('open');
+    row.classList.add('expanded');
+  }
 }
 
 /* ============================================================
