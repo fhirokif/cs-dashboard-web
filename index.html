@@ -1901,7 +1901,7 @@ function csRenderRanking() {
   for (var name in personMap) {
     var p = personMap[name];
     var jRate = p.apply > 0 ? (p.jisshi / p.apply) * 100 : null;
-    var sRate = p.apply > 0 ? (p.seiyaku / p.apply) * 100 : null;
+    var sRate = p.jisshi > 0 ? (p.seiyaku / p.jisshi) * 100 : null;
     rows.push({ name: name, pjs: p.pjs, apply: p.apply, jisshi: p.jisshi, seiyaku: p.seiyaku, jRate: jRate, sRate: sRate });
   }
   var key = csCurrentRankSort.key; var desc = csCurrentRankSort.desc;
