@@ -841,7 +841,8 @@
               <div class="table-wrap" id="weekly-table"></div>
             </div>
             <div class="ov-card">
-              <h2>3. サービス別実績（<span id="service-month-label"></span>）</h2>
+              <h2>3. サービス別実績</h2>
+              <div id="service-month-tabs" class="month-tabs" style="margin-bottom:12px"></div>
               <h3>3-1. 主力サービス</h3>
               <div class="table-wrap" id="major-service-table"></div>
               <h3>3-2. 小規模サービス</h3>
@@ -1035,7 +1036,10 @@ function renderDashboard(data) {
     renderSummary(overall, months);
     renderWeekly(overall, latestMonth);
   }
-  renderServiceTable(services, latestMonth, prevMonth);
+  _ovMonths = months;
+  _ovServices = services;
+  renderServiceMonthTabs(months, latestMonth);
+  renderServiceTable(services, latestMonth, months.length >= 2 ? months[months.length - 2] : null);
   renderInsights(data, overall, latestMonth, prevMonth);
 }
 
@@ -1136,8 +1140,34 @@ function renderWeekly(overall, month) {
   document.getElementById('weekly-table').innerHTML = html;
 }
 
+var _ovMonths = [];
+var _ovServices = [];
+
+function renderServiceMonthTabs(months, selectedMonth) {
+  var html = '';
+  months.forEach(function(m) {
+    var active = m.label === selectedMonth.label ? ' active' : '';
+    html += '<div class="month-tab' + active + '" onclick="switchServiceMonth(\'' + m.label + '\')">' + m.label + '</div>';
+  });
+  document.getElementById('service-month-tabs').innerHTML = html;
+}
+
+function switchServiceMonth(monthLabel) {
+  var selected = null;
+  var prevMonth = null;
+  for (var i = 0; i < _ovMonths.length; i++) {
+    if (_ovMonths[i].label === monthLabel) {
+      selected = _ovMonths[i];
+      prevMonth = i > 0 ? _ovMonths[i - 1] : null;
+      break;
+    }
+  }
+  if (!selected) return;
+  renderServiceMonthTabs(_ovMonths, selected);
+  renderServiceTable(_ovServices, selected, prevMonth);
+}
+
 function renderServiceTable(services, latest, prev) {
-  document.getElementById('service-month-label').textContent = latest.label;
   var list = services.filter(function(s) { return s.name !== '全体'; });
   var rows = list.map(function(s) {
     return {
@@ -1392,10 +1422,10 @@ var csDetailCache = {};
 var csDetailCharts = {};
 var csAnalysisCharts = {};
 var csOpenPJ = null;
-var csCurrentRankMonth = '3月';
+var csCurrentRankMonth = '4月';
 var csCurrentRankSort = { key: '成約数', desc: true };
 
-var CS_MONTHS = ['1月', '2月', '3月'];
+var CS_MONTHS = ['1月', '2月', '3月', '4月'];
 
 function csParsePercent(val) {
   if (val === '' || val === null || val === undefined) return null;
