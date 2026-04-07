@@ -841,11 +841,11 @@
               <div class="table-wrap" id="weekly-table"></div>
             </div>
             <div class="ov-card">
-              <h2>3. サービス別実績</h2>
+              <h2>3. PJ別実績</h2>
               <div id="service-month-tabs" class="month-tabs" style="margin-bottom:12px"></div>
-              <h3>3-1. 主力サービス</h3>
+              <h3>3-1. 主力PJ</h3>
               <div class="table-wrap" id="major-service-table"></div>
-              <h3>3-2. 小規模サービス</h3>
+              <h3>3-2. 小規模PJ</h3>
               <div class="table-wrap" id="minor-service-table"></div>
             </div>
             <div class="ov-card" id="insights-section" style="display:none;">
@@ -1189,9 +1189,9 @@ function renderServiceTable(services, latest, prev) {
 }
 
 function buildSvcTable(rows, showChange) {
-  if (rows.length === 0) return '<p class="muted">該当サービスなし</p>';
+  if (rows.length === 0) return '<p class="muted">該当PJなし</p>';
   var html = '<table><thead><tr>';
-  html += '<th>サービス</th><th>申込</th><th>実施</th><th>実施率</th><th>成約</th><th>成約率</th>';
+  html += '<th>PJ名</th><th>申込</th><th>実施</th><th>実施率</th><th>成約</th><th>成約率</th>';
   if (showChange) html += '<th>前月比</th>';
   html += '</tr></thead><tbody>';
   rows.forEach(function(r) {
@@ -1265,7 +1265,7 @@ function renderInsights(data, overall, latest, prev) {
             insights.push({
               type: 'warning',
               title: latest.label + '最新週の' + metric + '急落',
-              body: '前週比' + Math.round(pct) + '%（' + Number(p).toLocaleString() + ' → ' + Number(c).toLocaleString() + '）。全サービス横断で発生しているか確認が必要。'
+              body: '前週比' + Math.round(pct) + '%（' + Number(p).toLocaleString() + ' → ' + Number(c).toLocaleString() + '）。全PJ横断で発生しているか確認が必要。'
             });
           }
         }
@@ -1284,7 +1284,7 @@ function renderInsights(data, overall, latest, prev) {
     }
   });
   if (problemSvcs.length > 0) {
-    insights.push({ type: 'danger', title: '機能停止レベルのサービス', body: problemSvcs.join('、') + '。リード品質またはオペレーションの根本的な見直しが必要。' });
+    insights.push({ type: 'danger', title: '機能停止レベルのPJ', body: problemSvcs.join('、') + '。リード品質またはオペレーションの根本的な見直しが必要。' });
   }
 
   if (prev) {
@@ -1317,7 +1317,7 @@ function renderInsights(data, overall, latest, prev) {
     }
   });
   if (brightSvcs.length > 0) {
-    insights.push({ type: 'positive', title: '好調サービス', body: brightSvcs.join('、') + '。成長ドライバーとして注目。' });
+    insights.push({ type: 'positive', title: '好調PJ', body: brightSvcs.join('、') + '。成長ドライバーとして注目。' });
   }
 
   if (overall) {
