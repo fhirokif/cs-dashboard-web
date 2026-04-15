@@ -1429,6 +1429,7 @@ var CS_MONTHS = ['1月', '2月', '3月', '4月'];
 
 function csParsePercent(val) {
   if (val === '' || val === null || val === undefined) return null;
+  if (val === 'err' || val === 'ERR' || val === '#DIV/0!') return null;
   if (typeof val === 'number') {
     if (val > -1 && val <= 1 && val !== 0) return val * 100;
     if (val === 0) return 0;
@@ -1441,6 +1442,7 @@ function csParsePercent(val) {
 
 function csParseNum(val) {
   if (val === '' || val === null || val === undefined) return 0;
+  if (val === 'err' || val === 'ERR') return 0;
   if (typeof val === 'number') return val;
   var num = parseFloat(String(val));
   return isNaN(num) ? 0 : num;
